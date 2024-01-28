@@ -4,6 +4,8 @@ Given a geoTIFF (a TIFF with floating point height field in channel 0), build a 
 
 The model is composed of a rectangular box whose top face is the relief map made from the TIFF height field.
 
+![GeoTIFF](arran.png) -> ![3d model](model.png)
+
 # Dependencies
  - python 3
  - see requirements.txt for python deps
