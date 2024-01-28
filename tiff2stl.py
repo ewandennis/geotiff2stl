@@ -5,7 +5,7 @@ from stl import mesh
 import sys
 
 HSCALE = 50
-VSCALE = 4
+VSCALE = 3
 BOXHEIGHT = 200
 
 def noop(*args):
