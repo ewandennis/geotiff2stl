@@ -1,0 +1,12 @@
+imageio==2.33.1
+lazy_loader==0.3
+networkx==3.2.1
+numpy==1.26.3
+numpy-stl==3.1.1
+packaging==23.2
+pillow==10.2.0
+python-utils==3.8.2
+scikit-image==0.22.0
+scipy==1.12.0
+tifffile==2023.12.9
+typing_extensions==4.9.0
