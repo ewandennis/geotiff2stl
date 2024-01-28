@@ -6,7 +6,6 @@ The model is composed of a rectangular box whose top face is the relief map made
 
 # Dependencies
  - python 3
- - gdal
  - see requirements.txt for python deps
 
 # Usage
