@@ -5,8 +5,13 @@ from stl import mesh
 import sys
 
 HSCALE = 50
-VSCALE = 2.5
+VSCALE = 4
 BOXHEIGHT = 200
+
+def noop(*args):
+    pass
+
+debug = noop #print
 
 def topwall(verts, tris, npts, wallbottom):
     # add wall bottom verts
@@ -87,7 +92,7 @@ def main(inpath, outpath):
     # assert: need >1 row and >1 col
     assert(img.shape[0] > 1 and img.shape[1] > 1)
 
-    print('img shape = ', img.shape)
+    debug('img shape = ', img.shape)
 
     # channel 0 only
     channel0 = img
@@ -95,8 +100,8 @@ def main(inpath, outpath):
         channel0 = img[...,0]
 
     rows, ptsperrow = channel0.shape
-    print('input shape = ', channel0.shape)
-    print(channel0)
+    debug('input shape = ', channel0.shape)
+    debug(channel0)
 
     # build verts from pixels
     verts = [
@@ -129,10 +134,10 @@ def main(inpath, outpath):
     verts = np.array(verts)
     tris = np.array(tris, dtype=np.uint32)
 
-    print('verts shape = ', verts.shape)
+    debug('verts shape = ', verts.shape)
 
-    print('tris shape = ', tris.shape)
-    print(tris)
+    debug('tris shape = ', tris.shape)
+    debug(tris)
 
     writeme = mesh.Mesh(np.zeros(tris.shape[0], dtype=mesh.Mesh.dtype))
     for triidx, face in enumerate(tris):
