@@ -6,84 +6,73 @@ import sys
 
 HSCALE = 50
 VSCALE = 3
-BOXHEIGHT = 200
+BOXHEIGHT = 1000
 
 def noop(*args):
     pass
 
-debug = noop #print
+debug = noop # print
 
-def topwall(verts, tris, npts, wallbottom):
-    # add wall bottom verts
-    firstedgevertidx = len(verts)
-    for idx in range(npts):
-        v = verts[idx]
-        verts.extend([[v[0], v[1], wallbottom]])
-
-    # add triangle strip
-    for idx in range(npts-1):
+def topwall(verts, tris, ptsperrow, wallbottom):
+    vertspersurface = len(verts)/2
+    for idx in range(ptsperrow-1):
         pt0idx = idx
-        pt1idx = firstedgevertidx + idx
-        tri0 = [pt0idx, pt1idx+1, pt0idx+1] # upper right tri
-        tri1 = [pt0idx, pt1idx, pt1idx+1]   # lower left tri
+        pt1idx = vertspersurface + idx
+        tri0 = [pt0idx, pt0idx+1, pt1idx+1] # upper right tri
+        tri1 = [pt0idx, pt1idx+1, pt1idx]   # lower left tri
         tris.append(tri0)
         tris.append(tri1)
-    return firstedgevertidx
 
-def btmwall(verts, tris, rows, ptsperrow, wallbottom):
-    firstedgevertidx = len(verts)
-    lastrowvertidx = (rows-1) * ptsperrow
-    for idx in range(ptsperrow):
-        v = verts[lastrowvertidx + idx]
-        verts.extend([[v[0], v[1], wallbottom]])
-
+def btmwall(verts, tris, ptsperrow, wallbottom):
+    vertspersurface = len(verts)/2
+    lastrowvertidx = vertspersurface - ptsperrow
     for idx in range(ptsperrow-1):
         pt0idx = lastrowvertidx + idx
-        pt1idx = firstedgevertidx + idx
+        pt1idx = pt0idx + vertspersurface
         tri0 = [pt0idx, pt1idx+1, pt0idx+1] # upper right tri
         tri1 = [pt0idx, pt1idx, pt1idx+1]   # lower left tri
         tris.append(tri0)
         tris.append(tri1)
-    return firstedgevertidx
 
 def leftwall(verts, tris, rows, ptsperrow, wallbottom):
-    firstedgevertidx = len(verts)
-    for idx in range(rows):
-        v = verts[idx * ptsperrow]
-        verts.extend([[v[0], v[1], wallbottom]])
-
+    vertspersurface = len(verts)/2
     for idx in range(rows-1):
         pt0idx = idx * ptsperrow
-        pt1idx = firstedgevertidx + idx
-        tri0 = [pt0idx, pt1idx+1, pt0idx+ptsperrow] # upper right tri
-        tri1 = [pt0idx, pt1idx, pt1idx+1]   # lower left tri
+        pt1idx = pt0idx + vertspersurface
+        tri0 = [pt0idx, pt1idx+ptsperrow, pt0idx+ptsperrow] # upper right tri
+        tri1 = [pt0idx, pt1idx, pt1idx+ptsperrow,]   # lower left tri
         tris.append(tri0)
         tris.append(tri1)
-    return firstedgevertidx
 
 def rightwall(verts, tris, rows, ptsperrow, wallbottom):
-    firstedgevertidx = len(verts)
-    for idx in range(rows):
-        v = verts[(idx+1) * ptsperrow - 1]
-        verts.extend([[v[0], v[1], wallbottom]])
-
+    vertspersurface = len(verts)/2
     for idx in range(rows-1):
         pt0idx = (idx+1) * ptsperrow - 1
-        pt1idx = firstedgevertidx + idx
-        tri0 = [pt0idx, pt1idx+1, pt0idx+ptsperrow] # upper right tri
-        tri1 = [pt0idx, pt1idx, pt1idx+1]   # lower left tri
+        pt1idx = pt0idx + vertspersurface
+        tri0 = [pt0idx, pt0idx+ptsperrow, pt1idx+ptsperrow] # upper right tri
+        tri1 = [pt0idx, pt1idx+ptsperrow, pt1idx]   # lower left tri
         tris.append(tri0)
         tris.append(tri1)
-    return firstedgevertidx
 
-def base(tris, rows, leftwallvertidx, rightwallvertidx):
-    for idx in range(rows-1):
-        pt0idx = leftwallvertidx + idx
-        pt1idx = rightwallvertidx + idx
-        tri0 = [pt0idx, pt1idx+1, pt0idx+1] # upper right tri
-        tri1 = [pt0idx, pt1idx, pt1idx+1]   # lower left tri
-        tris.append(tri0)
-        tris.append(tri1)
+def base(verts, tris, rows, ptsperrow, wallbottom):
+    # copy terrain verts and flatten to z=wallbottom
+    nterrainverts = rows * ptsperrow
+    basevertidx = len(verts)
+    verts.extend(verts[:])
+    for idx in range(nterrainverts):
+        verts[basevertidx + idx] = verts[basevertidx + idx][:]
+        verts[basevertidx + idx][2] = wallbottom
+
+    # copy terrain tris and flip to point out
+    nterraintris = (rows-1) * (ptsperrow-1) * 2
+    basetriidx = len(tris)
+    tris.extend(tris[:nterraintris])
+    for idx in range(nterraintris):
+        tris[basetriidx+idx] = [
+            tris[basetriidx+idx][2] + basevertidx,
+            tris[basetriidx+idx][1] + basevertidx,
+            tris[basetriidx+idx][0] + basevertidx
+        ]
 
 def main(inpath, outpath):
     # load geotiff
@@ -124,12 +113,12 @@ def main(inpath, outpath):
             tris.append(tri0)
             tris.append(tri1)
 
-    topwall(verts, tris, ptsperrow, wallbottom)
-    btmwall(verts, tris, rows, ptsperrow, wallbottom)
-    leftwallvertidx = leftwall(verts, tris, rows, ptsperrow, wallbottom)
-    rightwallvertidx = rightwall(verts, tris, rows, ptsperrow, wallbottom)
+    base(verts, tris, rows, ptsperrow, wallbottom)
 
-    base(tris, rows, leftwallvertidx, rightwallvertidx)
+    topwall(verts, tris, ptsperrow, wallbottom)
+    btmwall(verts, tris, ptsperrow, wallbottom)
+    leftwall(verts, tris, rows, ptsperrow, wallbottom)
+    rightwall(verts, tris, rows, ptsperrow, wallbottom)
 
     verts = np.array(verts)
     tris = np.array(tris, dtype=np.uint32)
