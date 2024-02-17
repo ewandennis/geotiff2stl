@@ -5,13 +5,13 @@ from stl import mesh
 import sys
 
 HSCALE = 50
-VSCALE = 3
+ZSCALE = 3
 BOXHEIGHT = 1000
 
 def noop(*args):
     pass
 
-debug = noop # print
+debug = noop #print
 
 def topwall(verts, tris, ptsperrow, wallbottom):
     vertspersurface = len(verts)/2
@@ -74,7 +74,7 @@ def base(verts, tris, rows, ptsperrow, wallbottom):
             tris[basetriidx+idx][0] + basevertidx
         ]
 
-def main(inpath, outpath):
+def main(inpath, outpath, xscale, yscale, zscale, boxheight):
     # load geotiff
     img = ski.io.imread(inpath)
 
@@ -94,12 +94,12 @@ def main(inpath, outpath):
 
     # build verts from pixels
     verts = [
-        [x * HSCALE, (1. - y) * HSCALE, channel0[y, x] * VSCALE]
+        [x * xscale, (1. - y) * yscale, channel0[y, x] * zscale]
         for y in range(rows)
         for x in range(ptsperrow)
     ]
     lowest=min(verts, key=lambda v: v[2])
-    wallbottom = lowest[2] - BOXHEIGHT
+    wallbottom = lowest[2] - boxheight
 
     # build tri mesh from verts
     tris = []
@@ -136,7 +136,27 @@ def main(inpath, outpath):
     writeme.save(outpath)
 
 if __name__ == '__main__':
-    inpath = sys.argv[1]
-    outpath = sys.argv[2]
-    main(inpath, outpath)
+    from argparse import ArgumentParser
+    parser = ArgumentParser(
+            prog='tiff2stl',
+            description='convert GeoTIFF files into equivalent STL manifold meshes ready for printing'
+    )
+    parser.add_argument('input')
+    parser.add_argument('-o', '--output')
+    parser.add_argument('-v', '--verbose', action='store_true')
+    parser.add_argument('-xs', '--xscale', type=float, default=HSCALE)
+    parser.add_argument('-ys', '--yscale', type=float, default=HSCALE)
+    parser.add_argument('-zs', '--zscale', type=float, default=ZSCALE)
+    parser.add_argument('-bh', '--boxheight', type=float, default=BOXHEIGHT)
+    args = parser.parse_args()
+    if not args.output:
+        args.output = args.input + '.stl'
+    print('{} -> {}'.format(args.input, args.output))
+    if args.verbose:
+        debug = print
+
+    debug('scale = (%0.2f, %0.2f, %0.2f)' % (args.xscale, args.yscale, args.zscale))
+    debug('box height = %0.2f' % args.boxheight)
+
+    main(args.input, args.output, args.xscale, args.yscale, args.zscale, args.boxheight)
 
